@@ -1,0 +1,25 @@
+= mkcert: A simple program to create X.509 certificates
+
+== Getting started
+
+. Download and unpack the asset for your platform from the https://github.com/andreaslongo/mkcert/releases[release page].
+
+. Open a terminal and run the program.
+
+[source, bash]
+----
+# Linux
+al@linux ~ $ ./mkcert
+----
+
+[source, powershell]
+----
+# Windows
+PS C:\Users\al> .\mkcert.exe --help
+----
+
+== License
+
+Copyright (C) 2023 Andreas Longo
+
+GNU General Public License v3.0 or later
