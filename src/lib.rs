@@ -18,33 +18,37 @@ use openssl::x509::X509NameBuilder;
 use openssl::x509::X509;
 
 struct Config<'a> {
+    self_signed: bool,
     key_size_bits: u32,
+    days_until_expiration: u32,
     common_name: &'a str,
     organization: &'a str,
     state: &'a str,
     country: &'a str,
-    location: &'a str,
-    days_until_expiration: u32,
+    locality: &'a str,
 }
 
 /// Creates a new self-signed certificate and prints the details.
 pub fn run() -> Result<(), Box<dyn Error>> {
     let default_config = Config {
+        self_signed: true,
         key_size_bits: 2048,
+        days_until_expiration: 365,
         common_name: "generated",
         organization: "generated",
         state: "XX",
         country: "XX",
-        location: "XX",
-        days_until_expiration: 365,
+        locality: "XX",
     };
 
     let key_pair = new_key_pair(&default_config)?;
-    let cert = new_self_signed_certificate(&default_config, &key_pair)?;
+    if default_config.self_signed {
+        let cert = new_self_signed_certificate(&default_config, &key_pair)?;
 
-    let _ = print(&cert.to_text()?);
-    let _ = print(&key_pair.public_key_to_pem()?);
-    let _ = print(&cert.to_pem()?);
+        print(&cert.to_text()?)?;
+        print(&key_pair.public_key_to_pem()?)?;
+        print(&cert.to_pem()?)?;
+    }
 
     Ok(())
 }
@@ -64,7 +68,7 @@ fn new_self_signed_certificate(
     let mut x509_name = X509NameBuilder::new()?;
     x509_name.append_entry_by_text("C", config.country)?;
     x509_name.append_entry_by_text("ST", config.state)?;
-    x509_name.append_entry_by_text("L", config.location)?;
+    x509_name.append_entry_by_text("L", config.locality)?;
     x509_name.append_entry_by_text("O", config.organization)?;
     x509_name.append_entry_by_text("CN", config.common_name)?;
     let x509_name = x509_name.build();
