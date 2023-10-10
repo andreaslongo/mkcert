@@ -3,6 +3,8 @@
 == Getting started
 
 . Download and unpack the asset for your platform from the https://github.com/andreaslongo/mkcert/releases[release page].
+** *Linux*: https://github.com/andreaslongo/mkcert/releases/latest/download/mkcert-x86_64-unknown-linux-musl.tar.gz[mkcert-x86_64-unknown-linux-musl.tar.gz]
+** *Windows*: https://github.com/andreaslongo/mkcert/releases/latest/download/mkcert-x86_64-pc-windows-msvc.zip[mkcert-x86_64-pc-windows-msvc.zip]
 
 . Open a terminal and run the program.
 
@@ -16,6 +18,28 @@ al@linux ~ $ ./mkcert
 ----
 # Windows
 PS C:\Users\al> .\mkcert.exe --help
+----
+
+== Contributing
+
+The best way to get started is to build and run a local dev container.
+
+You can use https://podman.io[Podman] or any other OCI compliant container manager.
+The dev container has all the required dependencies for working with the project.
+
+[source, bash]
+----
+container/build.sh
+container/run.sh
+----
+
+From inside the container, you can then run some workflows.
+
+[source, bash]
+----
+cargo test    # run tests
+cargo clippy  # run linters
+cargo run
 ----
 
 == License

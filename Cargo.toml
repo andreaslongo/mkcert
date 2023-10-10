@@ -1,11 +1,13 @@
 [package]
 name = "mkcert"
 version = "0.1.0"
+edition = "2021"
 authors = ["Andreas Longo"]
 license = "GPL-3.0-or-later"
 repository = "https://github.com/andreaslongo/mkcert"
-edition = "2021"
 
 [dependencies]
-clap = { version = "4.4.0", features = ["derive"] }
+anstream = "0.6.4"
+clap = { version = "4.4.6", features = ["derive"] }
 openssl = "0.10.56"
+owo-colors = "3.5.0"
