@@ -9,7 +9,7 @@ readonly local gid=1000
 
 # Use --publish <host_port>:<container_port> to enable networking.
 # Use --rm to remove the container after exit.
-podman container attach "$(basename ${parent_dir})" 2>/dev/null || podman container run \
+podman container start --attach --interactive "$(basename ${parent_dir})" 2>/dev/null || podman container run \
     --interactive \
     --name="$(basename ${parent_dir})" \
     --pull=newer \
