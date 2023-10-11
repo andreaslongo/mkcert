@@ -1,10 +1,10 @@
 use std::error::Error;
 use std::fs;
 use std::fs::OpenOptions;
+use std::io::Write;
 use std::path::PathBuf;
 use std::str;
 use std::str::Utf8Error;
-use std::io::Write;
 
 use openssl::asn1::Asn1Integer;
 use openssl::asn1::Asn1Time;
@@ -76,18 +76,19 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         if request.self_signed {
             let cert = new_self_signed_certificate(&request, &key_pair)?;
 
-
-            let mut cert_file = OpenOptions::new().write(true)
-                             .create_new(true)
-                             .open(request.common_name + ".pem")?;
-
-            dbg!(&cert_file);
+            let mut cert_file = OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(request.common_name.clone() + ".pem")?;
             cert_file.write_all(&cert.to_pem()?)?;
 
-            print(&cert.to_text()?)?;
-            print(&key_pair.public_key_to_pem()?)?;
-            print(&key_pair.private_key_to_pem_pkcs8()?)?;
-            print(&cert.to_pem()?)?;
+            let mut key_file = OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(request.common_name + ".key")?;
+            key_file.write_all(&key_pair.private_key_to_pem_pkcs8()?)?;
+
+            // print(&cert.to_text()?)?;
         }
     }
 
