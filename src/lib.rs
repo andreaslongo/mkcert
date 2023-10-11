@@ -47,7 +47,7 @@ impl Config {
         if let Some(file_path) = args.file_path {
             for file in file_path {
                 let contents = fs::read_to_string(file)?;
-                extend_certificates_from_contents(&mut certificates, contents);
+                extend_certificates_from_contents(&mut certificates, contents)?;
             }
         }
 
@@ -56,9 +56,13 @@ impl Config {
 }
 
 /// Parses the content of a template file and extends the certificates vector.
-fn extend_certificates_from_contents(certificates: &mut Vec<Certificate>, contents: String) {
-    let c: Vec<Certificate> = serde_yaml::from_str(&contents).unwrap();
+fn extend_certificates_from_contents(
+    certificates: &mut Vec<Certificate>,
+    contents: String,
+) -> Result<(), serde_yaml::Error> {
+    let c: Vec<Certificate> = serde_yaml::from_str(&contents)?;
     certificates.extend(c);
+    Ok(())
 }
 
 /// Creates a new self-signed certificate and prints the details.
