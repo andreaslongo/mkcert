@@ -1,4 +1,6 @@
 use std::error::Error;
+use std::fs;
+use std::path::PathBuf;
 use std::str;
 use std::str::Utf8Error;
 
@@ -16,61 +18,84 @@ use openssl::x509::extension::BasicConstraints;
 use openssl::x509::extension::SubjectKeyIdentifier;
 use openssl::x509::X509NameBuilder;
 use openssl::x509::X509;
+use serde::{Deserialize, Serialize};
 
-struct Config<'a> {
+pub struct Args {
+    pub file_path: Option<Vec<PathBuf>>,
+}
+
+pub struct Config {
+    certificates: Vec<Certificate>,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+struct Certificate {
     self_signed: bool,
     key_size_bits: u32,
     days_until_expiration: u32,
-    common_name: &'a str,
-    organization: &'a str,
-    state: &'a str,
-    country: &'a str,
-    locality: &'a str,
+    common_name: String,
+    organization: String,
+    state: String,
+    country: String,
+    locality: String,
+}
+
+impl Config {
+    pub fn build(args: Args) -> Result<Config, Box<dyn Error>> {
+        let mut certificates: Vec<Certificate> = Vec::new();
+
+        if let Some(file_path) = args.file_path {
+            for file in file_path {
+                let contents = fs::read_to_string(file)?;
+                extend_certificates_from_contents(&mut certificates, contents);
+            }
+        }
+
+        Ok(Config { certificates })
+    }
+}
+
+/// Parses the content of a template file and extends the certificates vector.
+fn extend_certificates_from_contents(certificates: &mut Vec<Certificate>, contents: String) {
+    let c: Vec<Certificate> = serde_yaml::from_str(&contents).unwrap();
+    certificates.extend(c);
 }
 
 /// Creates a new self-signed certificate and prints the details.
-pub fn run() -> Result<(), Box<dyn Error>> {
-    let default_config = Config {
-        self_signed: true,
-        key_size_bits: 2048,
-        days_until_expiration: 365,
-        common_name: "generated",
-        organization: "generated",
-        state: "XX",
-        country: "XX",
-        locality: "XX",
-    };
+pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    for cert in config.certificates {
+        let key_pair = new_key_pair(&cert)?;
 
-    let key_pair = new_key_pair(&default_config)?;
-    if default_config.self_signed {
-        let cert = new_self_signed_certificate(&default_config, &key_pair)?;
+        if cert.self_signed {
+            let cert = new_self_signed_certificate(&cert, &key_pair)?;
 
-        print(&cert.to_text()?)?;
-        print(&key_pair.public_key_to_pem()?)?;
-        print(&cert.to_pem()?)?;
+            print(&cert.to_text()?)?;
+            print(&key_pair.public_key_to_pem()?)?;
+            print(&cert.to_pem()?)?;
+        }
     }
 
     Ok(())
 }
 
 /// Generates a new RSA public/private key pair with the specified size.
-fn new_key_pair(config: &Config) -> Result<PKey<Private>, ErrorStack> {
-    let rsa = Rsa::generate(config.key_size_bits)?;
+fn new_key_pair(cert: &Certificate) -> Result<PKey<Private>, ErrorStack> {
+    let rsa = Rsa::generate(cert.key_size_bits)?;
     let key_pair = PKey::from_rsa(rsa)?;
     Ok(key_pair)
 }
 
 /// Creates a new self-signed certificate which expires after 1 year.
 fn new_self_signed_certificate(
-    config: &Config,
+    cert: &Certificate,
     key_pair: &PKey<Private>,
 ) -> Result<X509, ErrorStack> {
     let mut x509_name = X509NameBuilder::new()?;
-    x509_name.append_entry_by_text("C", config.country)?;
-    x509_name.append_entry_by_text("ST", config.state)?;
-    x509_name.append_entry_by_text("L", config.locality)?;
-    x509_name.append_entry_by_text("O", config.organization)?;
-    x509_name.append_entry_by_text("CN", config.common_name)?;
+    x509_name.append_entry_by_text("CN", &cert.common_name)?;
+    x509_name.append_entry_by_text("O", &cert.organization)?;
+    x509_name.append_entry_by_text("L", &cert.locality)?;
+    x509_name.append_entry_by_text("ST", &cert.state)?;
+    x509_name.append_entry_by_text("C", &cert.country)?;
     let x509_name = x509_name.build();
 
     let mut cert_builder = X509::builder()?;
@@ -82,7 +107,7 @@ fn new_self_signed_certificate(
     cert_builder.set_issuer_name(&x509_name)?;
     let not_before = Asn1Time::days_from_now(0)?;
     cert_builder.set_not_before(&not_before)?;
-    let not_after = Asn1Time::days_from_now(config.days_until_expiration)?;
+    let not_after = Asn1Time::days_from_now(cert.days_until_expiration)?;
     cert_builder.set_not_after(&not_after)?;
     cert_builder.set_subject_name(&x509_name)?;
     cert_builder.set_pubkey(key_pair)?;
@@ -109,7 +134,7 @@ fn new_serial_number() -> Result<Asn1Integer, ErrorStack> {
     serial.to_asn1_integer()
 }
 
-/// Prints raw certificate data.
+/// Prints the raw certificate data.
 fn print(c: &[u8]) -> Result<(), Utf8Error> {
     print!("{}", str::from_utf8(c)?);
     Ok(())

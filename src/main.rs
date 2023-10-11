@@ -1,11 +1,24 @@
+use std::path::PathBuf;
 use std::process;
 
 use clap::Parser;
 
-fn main() {
-    let _cli = Cli::parse();
+use mkcert::Args;
+use mkcert::Config;
 
-    if let Err(e) = mkcert::run() {
+fn main() {
+    let cli = Cli::parse();
+
+    let args = Args {
+        file_path: cli.file,
+    };
+
+    let config = Config::build(args).unwrap_or_else(|e| {
+        eprintln!("Configuration error: {e}\nTry 'mkcert --help' for more information.");
+        process::exit(1);
+    });
+
+    if let Err(e) = mkcert::run(config) {
         eprintln!("Application error: {e}\nTry 'mkcert --help' for more information.");
         process::exit(1);
     }
@@ -14,7 +27,12 @@ fn main() {
 /// A simple program to create X.509 certificates
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
+#[command(arg_required_else_help(true))]
 #[command(
     help_template = "{about-section}\n{usage-heading} {usage}\n\n{all-args}\n\nWritten by {author}\nhttps://github.com/andreaslongo/mkcert"
 )]
-pub struct Cli {}
+pub struct Cli {
+    /// Template file
+    #[arg(short, long)]
+    file: Option<Vec<PathBuf>>,
+}

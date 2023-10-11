@@ -1,0 +1,18 @@
+# The domain name (CN) you wish to secure with the certificate
+- common_name: cert1.example.com
+  self_signed: true  # Create a new self-signed certificate
+  key_size_bits: 2048
+  days_until_expiration: 365
+  organization: generated
+  locality: XX
+  state: XX
+  country: XX
+
+- common_name: cert2.example.com
+  self_signed: true
+  key_size_bits: 2048
+  days_until_expiration: 365
+  organization: generated
+  locality: XX
+  state: XX
+  country: XX
