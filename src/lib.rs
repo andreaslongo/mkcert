@@ -1,8 +1,10 @@
 use std::error::Error;
 use std::fs;
+use std::fs::OpenOptions;
 use std::path::PathBuf;
 use std::str;
 use std::str::Utf8Error;
+use std::io::Write;
 
 use openssl::asn1::Asn1Integer;
 use openssl::asn1::Asn1Time;
@@ -62,19 +64,29 @@ fn extend_certificates_from_contents(
 ) -> Result<(), serde_yaml::Error> {
     let c: Vec<Certificate> = serde_yaml::from_str(&contents)?;
     certificates.extend(c);
+
     Ok(())
 }
 
 /// Creates a new self-signed certificate and prints the details.
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    for cert in config.certificates {
-        let key_pair = new_key_pair(&cert)?;
+    for request in config.certificates {
+        let key_pair = new_key_pair(&request)?;
 
-        if cert.self_signed {
-            let cert = new_self_signed_certificate(&cert, &key_pair)?;
+        if request.self_signed {
+            let cert = new_self_signed_certificate(&request, &key_pair)?;
+
+
+            let mut cert_file = OpenOptions::new().write(true)
+                             .create_new(true)
+                             .open(request.common_name + ".pem")?;
+
+            dbg!(&cert_file);
+            cert_file.write_all(&cert.to_pem()?)?;
 
             print(&cert.to_text()?)?;
             print(&key_pair.public_key_to_pem()?)?;
+            print(&key_pair.private_key_to_pem_pkcs8()?)?;
             print(&cert.to_pem()?)?;
         }
     }
