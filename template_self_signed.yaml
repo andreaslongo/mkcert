@@ -16,3 +16,12 @@
   locality: XX
   state: XX
   country: XX
+
+- common_name: cert3.example.com
+  self_signed: false
+  key_size_bits: 2048
+  days_until_expiration: 365
+  organization: generated
+  locality: XX
+  state: XX
+  country: XX
