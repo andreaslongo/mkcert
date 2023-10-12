@@ -15,7 +15,7 @@ use openssl::hash::MessageDigest;
 use openssl::pkey::PKey;
 use openssl::pkey::Private;
 use openssl::rsa::Rsa;
-use openssl::stack::Stack;
+use openssl::symm::Cipher;
 use openssl::x509::extension::AuthorityKeyIdentifier;
 use openssl::x509::extension::BasicConstraints;
 use openssl::x509::extension::SubjectKeyIdentifier;
@@ -60,6 +60,22 @@ impl Config {
     }
 }
 
+struct Passphrase {
+    value: String,
+}
+
+impl Passphrase {
+    fn from_tty() -> Result<Passphrase, Box<dyn Error>> {
+        let value = rpassword::prompt_password("Enter new passphrase: ").unwrap();
+        let confirmation =
+            rpassword::prompt_password("Verifying - Enter new passphrase: ").unwrap();
+        assert_eq!(value, confirmation, "Verify failure");
+        assert!(!value.is_empty());
+
+        Ok(Passphrase { value })
+    }
+}
+
 /// Parses the content of a template file and extends the certificates vector.
 fn extend_certificates_from_contents(
     certificates: &mut Vec<Certificate>,
@@ -71,21 +87,21 @@ fn extend_certificates_from_contents(
     Ok(())
 }
 
-/// Creates a new self-signed certificate and prints the details.
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let password = rpassword::prompt_password("Enter new passphrase: ").unwrap();
-    let password_confirmed = rpassword::prompt_password("Verifying - Enter new passphrase: ").unwrap();
-    
-    assert_eq!(password, password_confirmed, "Verify failure");
-
     for request in config.certificates {
+        println!("New certificate: {}", request.common_name);
+        let passphrase = Passphrase::from_tty()?;
+
         let key_pair = new_key_pair(&request)?;
 
         let mut key_file = OpenOptions::new()
             .write(true)
             .create_new(true)
             .open(request.common_name.clone() + ".key")?;
-        key_file.write_all(&key_pair.private_key_to_pem_pkcs8()?)?;
+        key_file.write_all(&key_pair.private_key_to_pem_pkcs8_passphrase(
+            Cipher::aes_256_cbc(),
+            &passphrase.value.into_bytes(),
+        )?)?;
 
         if request.self_signed {
             let cert = new_self_signed_certificate(&request, &key_pair)?;
@@ -175,34 +191,20 @@ fn new_serial_number() -> Result<Asn1Integer, ErrorStack> {
     serial.to_asn1_integer()
 }
 
-/// Creates a new certificate signing request.
+/// Makes a new certificate signing request with the given private key
 fn new_csr(cert: &Certificate, key_pair: &PKey<Private>) -> Result<X509Req, ErrorStack> {
-    let x509_name = build_x509_name(cert)?;
-    
-
     let mut builder = X509Req::builder()?;
 
-    builder.set_version(2)?;
-    builder.set_subject_name(&x509_name)?;
     builder.set_pubkey(key_pair)?;
+    builder.set_version(1)?;
 
-    let mut stack = Stack::new()?;
+    let x509_name = build_x509_name(cert)?;
+    builder.set_subject_name(&x509_name)?;
 
-    let subject_key_identifier =
-        SubjectKeyIdentifier::new().build(&builder.x509v3_context(None))?;
-    stack.push(subject_key_identifier)?;
-
-    //let authority_key_identifier = AuthorityKeyIdentifier::new()
-    //    .keyid(true)
-    //    .build(&builder.x509v3_context(None))?;
-    //stack.push(authority_key_identifier)?;
-
-    // stack.push(BasicConstraints::new().critical().ca().build()?)?;
-
-    builder.add_extensions(&stack)?;
     builder.sign(key_pair, MessageDigest::sha256())?;
+    let req = builder.build();
 
-    Ok(builder.build())
+    Ok(req)
 }
 
 /// Prints the raw certificate data.

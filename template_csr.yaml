@@ -1,10 +1,20 @@
 # Generate a 2048-bit RSA private key and CSR
+# openssl req -new -newkey rsa:2048 -keyout openssl.key -out openssl.csr
 
-- common_name: cert3.example.com
+- common_name: csr1.example.com
   organization: generated
   locality: XX
   state: XX
   country: XX
   key_size_bits: 2048
-  days_until_expiration: 365  # optional for CSR?
+  self_signed: false          # optional: 'false' creates a CSR instead of a self-signed certificate.
+  days_until_expiration: 365  # optional: can be specified for self-signed certificates.
+
+- common_name: csr2.example.com
+  organization: generated
+  locality: XX
+  state: XX
+  country: XX
+  key_size_bits: 4096
   self_signed: false
+  days_until_expiration: 365
