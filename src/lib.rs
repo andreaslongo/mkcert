@@ -73,6 +73,11 @@ fn extend_certificates_from_contents(
 
 /// Creates a new self-signed certificate and prints the details.
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    let password = rpassword::prompt_password("Enter new passphrase: ").unwrap();
+    let password_confirmed = rpassword::prompt_password("Verifying - Enter new passphrase: ").unwrap();
+    
+    assert_eq!(password, password_confirmed, "Verify failure");
+
     for request in config.certificates {
         let key_pair = new_key_pair(&request)?;
 

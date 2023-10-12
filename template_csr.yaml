@@ -1,8 +1,10 @@
+# Generate a 2048-bit RSA private key and CSR
+
 - common_name: cert3.example.com
-  self_signed: false
-  key_size_bits: 2048
-  days_until_expiration: 365
   organization: generated
   locality: XX
   state: XX
   country: XX
+  key_size_bits: 2048
+  days_until_expiration: 365  # optional for CSR?
+  self_signed: false
