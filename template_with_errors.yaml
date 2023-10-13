@@ -1,11 +1,9 @@
 # Expected: Configuration error: invalid type: map, expected a sequence at line 2 column 3
 
-# The domain name (CN) you wish to secure with the certificate
-  common_name: cert1.example.com
-  self_signed: true  # Create a new self-signed certificate
-  key_size_bits: 2048
-  days_until_expiration: 365
+  common_name: csr1.example.com
   organization: generated
   locality: XX
   state: XX
   country: XX
+  key_size_bits: 2048
+  self_signed: false

@@ -1,27 +1,17 @@
-# The domain name (CN) you wish to secure with the certificate
-- common_name: cert1.example.com
-  self_signed: true  # Create a new self-signed certificate
-  key_size_bits: 2048
-  days_until_expiration: 365
+# Generate a 2048-bit RSA private key and self-signed certificate
+
+- common_name: crt1.example.com
   organization: generated
   locality: XX
   state: XX
   country: XX
+  key_size_bits: 2048
+  self_signed: true  # 'false' creates a CSR instead of a self-signed certificate.
 
-- common_name: cert2.example.com
+- common_name: crt2.example.com
+  organization: generated
+  locality: XX
+  state: XX
+  country: XX
+  key_size_bits: 4096
   self_signed: true
-  key_size_bits: 2048
-  days_until_expiration: 365
-  organization: generated
-  locality: XX
-  state: XX
-  country: XX
-
-- common_name: cert3.example.com
-  self_signed: false
-  key_size_bits: 2048
-  days_until_expiration: 365
-  organization: generated
-  locality: XX
-  state: XX
-  country: XX
