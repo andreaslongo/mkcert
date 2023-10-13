@@ -1,10 +1,10 @@
 use std::error::Error;
-use std::fs;
 use std::fs::OpenOptions;
+use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
-use std::str;
 use std::str::Utf8Error;
+use std::str;
 
 use openssl::asn1::Asn1Integer;
 use openssl::asn1::Asn1Time;
@@ -16,14 +16,15 @@ use openssl::pkey::PKey;
 use openssl::pkey::Private;
 use openssl::rsa::Rsa;
 use openssl::symm::Cipher;
-use openssl::x509::extension::AuthorityKeyIdentifier;
-use openssl::x509::extension::BasicConstraints;
-use openssl::x509::extension::SubjectKeyIdentifier;
+use openssl::x509::X509;
 use openssl::x509::X509Name;
 use openssl::x509::X509NameBuilder;
 use openssl::x509::X509Req;
-use openssl::x509::X509;
-use serde::{Deserialize, Serialize};
+use openssl::x509::extension::AuthorityKeyIdentifier;
+use openssl::x509::extension::BasicConstraints;
+use openssl::x509::extension::SubjectKeyIdentifier;
+use serde::Deserialize;
+use serde::Serialize;
 
 pub struct Args {
     pub file_path: Option<Vec<PathBuf>>,
@@ -35,14 +36,13 @@ pub struct Config {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 struct Certificate {
-    self_signed: bool,
-    key_size_bits: u32,
-    days_until_expiration: u32,
     common_name: String,
     organization: String,
+    locality: String,
     state: String,
     country: String,
-    locality: String,
+    key_size_bits: u32,
+    self_signed: bool,
 }
 
 impl Config {
@@ -112,7 +112,8 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                 .open(request.common_name.clone() + ".pem")?;
             cert_file.write_all(&cert.to_pem()?)?;
 
-            print(&cert.to_text()?)?;
+            // TODO: Make this --verbose
+            // print(&cert.to_text()?)?;
         } else {
             let csr = new_csr(&request, &key_pair)?;
 
@@ -122,8 +123,11 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                 .open(request.common_name.clone() + ".csr")?;
             csr_file.write_all(&csr.to_pem()?)?;
 
-            print(&csr.to_text()?)?;
+            // TODO: Make this --verbose
+            // print(&csr.to_text()?)?;
         }
+
+        println!()  // visually separate multiple requests
     }
 
     Ok(())
@@ -163,7 +167,7 @@ fn new_self_signed_certificate(
     builder.set_issuer_name(&x509_name)?;
     let not_before = Asn1Time::days_from_now(0)?;
     builder.set_not_before(&not_before)?;
-    let not_after = Asn1Time::days_from_now(cert.days_until_expiration)?;
+    let not_after = Asn1Time::days_from_now(366)?;
     builder.set_not_after(&not_after)?;
     builder.set_subject_name(&x509_name)?;
     builder.set_pubkey(key_pair)?;
