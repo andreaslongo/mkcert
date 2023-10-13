@@ -6,19 +6,52 @@
 ** *Linux*: https://github.com/andreaslongo/mkcert/releases/latest/download/mkcert-x86_64-unknown-linux-musl.tar.gz[mkcert-x86_64-unknown-linux-musl.tar.gz]
 ** *Windows*: https://github.com/andreaslongo/mkcert/releases/latest/download/mkcert-x86_64-pc-windows-msvc.zip[mkcert-x86_64-pc-windows-msvc.zip]
 
+. Copy the program to the host where you want to use the new certificate.
++
+NOTE: It is not necessary to copy and move around private keys.
+You can create them directly at the target host.
+
 . Open a terminal and run the program.
 
 [source, bash]
 ----
 # Linux
-al@linux ~ $ ./mkcert
+al@linux ~ $ ./mkcert -f examples/request.yaml
+New certificate: csr.example.com
+Enter new passphrase:
+Verifying - Enter new passphrase:
+
+al@linux ~ $ ls csr*
+csr.example.com.csr  csr.example.com.key
 ----
 
 [source, powershell]
 ----
 # Windows
 PS C:\Users\al> .\mkcert.exe --help
+A simple program to create X.509 certificates
+
+Usage: mkcert.exe [OPTIONS]
+
+Options:
+  -f, --file <FILE>  Template file
+  -h, --help         Print help
+  -V, --version      Print version
 ----
+
+== Private keys
+
+A new private key is automatically generated with every request.
+Each key is encrypted based on the passphrase you specify.
+You can use (decrypt) the key with the same passphrase.
+
+Details:
+
+* Encryption Algorithm: AES 256-bit CBC
+* Key derivation function: PBKDF2
+
+NOTE: Use a strong (long and random) passphrase.
+https://xkcd.com/936[Click here] for an illustration of the concept.
 
 == Contributing
 
