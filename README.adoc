@@ -47,7 +47,7 @@ You can use (decrypt) the key with the same passphrase.
 
 Details:
 
-* Encryption Algorithm: AES 256-bit CBC
+* Encryption algorithm: AES 256-bit CBC
 * Key derivation function: PBKDF2
 
 NOTE: Use a strong (long and random) passphrase.
