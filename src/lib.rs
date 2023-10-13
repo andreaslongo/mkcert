@@ -1,9 +1,8 @@
 use std::error::Error;
-use std::fs::OpenOptions;
 use std::fs;
+use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::PathBuf;
-use std::str::Utf8Error;
 use std::str;
 
 use openssl::asn1::Asn1Integer;
@@ -16,13 +15,13 @@ use openssl::pkey::PKey;
 use openssl::pkey::Private;
 use openssl::rsa::Rsa;
 use openssl::symm::Cipher;
-use openssl::x509::X509;
-use openssl::x509::X509Name;
-use openssl::x509::X509NameBuilder;
-use openssl::x509::X509Req;
 use openssl::x509::extension::AuthorityKeyIdentifier;
 use openssl::x509::extension::BasicConstraints;
 use openssl::x509::extension::SubjectKeyIdentifier;
+use openssl::x509::X509Name;
+use openssl::x509::X509NameBuilder;
+use openssl::x509::X509Req;
+use openssl::x509::X509;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -127,7 +126,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
             // print(&csr.to_text()?)?;
         }
 
-        println!()  // visually separate multiple requests
+        println!() // visually separate multiple requests
     }
 
     Ok(())
@@ -211,8 +210,11 @@ fn new_csr(cert: &Certificate, key_pair: &PKey<Private>) -> Result<X509Req, Erro
     Ok(req)
 }
 
-/// Prints the raw certificate data.
-fn print(c: &[u8]) -> Result<(), Utf8Error> {
-    print!("{}", str::from_utf8(c)?);
-    Ok(())
-}
+// TODO: Useful for --verbose or a 'show' command to read existing certificate files
+// print(&csr.to_text()?)?;
+// /// Prints the raw certificate data.
+// use std::str::Utf8Error;
+// fn print(c: &[u8]) -> Result<(), Utf8Error> {
+//     print!("{}", str::from_utf8(c)?);
+//     Ok(())
+// }
