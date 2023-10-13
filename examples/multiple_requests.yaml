@@ -1,0 +1,16 @@
+---
+- common_name: csr1.example.com
+  organization: generated
+  locality: XX
+  state: XX
+  country: XX
+  key_size_bits: 4096
+  self_signed: false
+
+- common_name: csr2.example.com
+  organization: generated
+  locality: XX
+  state: XX
+  country: XX
+  key_size_bits: 2048
+  self_signed: false

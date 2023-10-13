@@ -1,4 +1,4 @@
-# Expected: Configuration error: invalid type: map, expected a sequence at line 2 column 3
+# Expect: Configuration error: invalid type: map, expected a sequence
 
   common_name: csr1.example.com
   organization: generated
