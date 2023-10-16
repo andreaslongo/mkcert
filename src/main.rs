@@ -11,6 +11,7 @@ fn main() {
 
     let args = Args {
         file_path: cli.file,
+        bundle_path: cli.bundle,
     };
 
     let config = Config::build(args).unwrap_or_else(|e| {
@@ -35,4 +36,9 @@ pub struct Cli {
     /// Template file
     #[arg(short, long)]
     file: Option<Vec<PathBuf>>,
+
+    /// Bundle a private key with its X.509 certificate into a PKCS #12 file.
+    #[arg(short, long)]
+    bundle: Option<Vec<PathBuf>>,
+
 }

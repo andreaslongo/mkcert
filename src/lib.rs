@@ -27,10 +27,12 @@ use serde::Serialize;
 
 pub struct Args {
     pub file_path: Option<Vec<PathBuf>>,
+    pub bundle_path: Option<Vec<PathBuf>>,
 }
 
 pub struct Config {
     certificates: Vec<Certificate>,
+    bundles: Vec<Bundle>,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -44,9 +46,14 @@ struct Certificate {
     self_signed: bool,
 }
 
+struct Bundle {
+    private_key_file: PathBuf,
+}
+
 impl Config {
     pub fn build(args: Args) -> Result<Config, Box<dyn Error>> {
         let mut certificates: Vec<Certificate> = Vec::new();
+        let mut bundles: Vec<Bundle> = Vec::new();
 
         if let Some(file_path) = args.file_path {
             for file in file_path {
@@ -55,7 +62,17 @@ impl Config {
             }
         }
 
-        Ok(Config { certificates })
+        if let Some(bundle_path) = args.bundle_path {
+            for private_key_file in bundle_path {
+                if private_key_file.extension().ok_or("Not a private key file")? == "key" {
+                    bundles.push(Bundle {private_key_file});
+                } else {
+                    println!("Not a private key file: {}", private_key_file.display());
+                }
+            }
+        }
+
+        Ok(Config { certificates, bundles })
     }
 }
 
@@ -64,11 +81,18 @@ struct Passphrase {
 }
 
 impl Passphrase {
-    fn from_tty() -> Result<Passphrase, Box<dyn Error>> {
+    fn new_from_tty() -> Result<Passphrase, Box<dyn Error>> {
         let value = rpassword::prompt_password("Enter new passphrase: ").unwrap();
         let confirmation =
             rpassword::prompt_password("Verifying - Enter new passphrase: ").unwrap();
         assert_eq!(value, confirmation, "Verify failure");
+        assert!(!value.is_empty());
+
+        Ok(Passphrase { value })
+    }
+
+    fn from_tty() -> Result<Passphrase, Box<dyn Error>> {
+        let value = rpassword::prompt_password("Enter passphrase: ").unwrap();
         assert!(!value.is_empty());
 
         Ok(Passphrase { value })
@@ -87,9 +111,21 @@ fn extend_certificates_from_contents(
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    for bundle in config.bundles {
+        println!("Bundle: {}", bundle.private_key_file.display());
+        let passphrase = Passphrase::from_tty()?;
+
+        let der = fs::read_to_string(bundle.private_key_file)?.into_bytes();
+        let private_key = PKey::private_key_from_pkcs8_passphrase(&der, &passphrase.value.into_bytes())?;
+
+        dbg!(&der);
+        dbg!(&private_key);
+    }
+
+
     for request in config.certificates {
         println!("New certificate: {}", request.common_name);
-        let passphrase = Passphrase::from_tty()?;
+        let passphrase = Passphrase::new_from_tty()?;
 
         let key_pair = new_key_pair(&request)?;
 

@@ -9,7 +9,8 @@ repository = "https://github.com/andreaslongo/mkcert"
 [dependencies]
 anstream = "0.6.4"
 clap = { version = "4.4.6", features = ["derive"] }
-openssl = { version = "0.10.57", features = ["vendored"] }
+# openssl = { version = "0.10.57", features = ["vendored"] }
+openssl = "0.10.57"
 owo-colors = "3.5.0"
 rpassword = "7.2.0"
 serde = { version = "1.0.188", features = ["derive"] }
