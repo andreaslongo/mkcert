@@ -11,6 +11,8 @@
 NOTE: It is not necessary to copy and move around private keys.
 You can create them directly at the target host.
 
+. Create a template file: https://github.com/andreaslongo/mkcert/tree/main/examples[Click here] for some examples.
+
 . Open a terminal and run the program.
 
 [source, bash]
