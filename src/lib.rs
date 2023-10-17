@@ -11,10 +11,10 @@ use openssl::bn::BigNum;
 use openssl::bn::MsbOption;
 use openssl::error::ErrorStack;
 use openssl::hash::MessageDigest;
+use openssl::pkcs12::Pkcs12;
 use openssl::pkey::PKey;
 use openssl::pkey::Private;
 use openssl::rsa::Rsa;
-use openssl::pkcs12::Pkcs12;
 use openssl::symm::Cipher;
 use openssl::x509::extension::AuthorityKeyIdentifier;
 use openssl::x509::extension::BasicConstraints;
@@ -65,15 +65,22 @@ impl Config {
 
         if let Some(bundle_path) = args.bundle_path {
             for private_key_file in bundle_path {
-                if private_key_file.extension().ok_or("Not a private key file")? == "key" {
-                    bundles.push(Bundle {private_key_file});
+                if private_key_file
+                    .extension()
+                    .ok_or("Not a private key file")?
+                    == "key"
+                {
+                    bundles.push(Bundle { private_key_file });
                 } else {
                     println!("Not a private key file: {}", private_key_file.display());
                 }
             }
         }
 
-        Ok(Config { certificates, bundles })
+        Ok(Config {
+            certificates,
+            bundles,
+        })
     }
 }
 
@@ -113,20 +120,26 @@ fn extend_certificates_from_contents(
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     for bundle in config.bundles {
-        let name  = bundle.private_key_file.file_stem().ok_or("Invalid file name")?.to_str().ok_or("Invalid file name")?;
+        let name = bundle
+            .private_key_file
+            .file_stem()
+            .ok_or("Invalid file name")?
+            .to_str()
+            .ok_or("Invalid file name")?;
         println!("Bundle: {}", &name);
 
         let passphrase = Passphrase::from_tty()?;
         let pkey = &bundle.private_key_file;
         let pkey = fs::read_to_string(pkey)?.into_bytes();
-        let pkey = PKey::private_key_from_pem_passphrase(&pkey, &passphrase.value.clone().into_bytes())?;
+        let pkey =
+            PKey::private_key_from_pem_passphrase(&pkey, &passphrase.value.clone().into_bytes())?;
 
         let cert = bundle.private_key_file.with_extension("crt");
         let cert = fs::read_to_string(cert)?.into_bytes();
         let cert = X509::from_pem(&cert)?;
 
         let mut builder = Pkcs12::builder();
-        
+
         builder.name(name);
         builder.pkey(&pkey);
         builder.cert(&cert);

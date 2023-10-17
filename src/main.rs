@@ -40,5 +40,4 @@ pub struct Cli {
     /// Bundle a private key with its X.509 certificate into a PKCS #12 file.
     #[arg(short, long)]
     bundle: Option<Vec<PathBuf>>,
-
 }
