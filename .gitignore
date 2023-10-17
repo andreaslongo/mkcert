@@ -1,6 +1,7 @@
 *.key
 *.crt
 *.csr
+*.p12
 
 # https://raw.githubusercontent.com/github/gitignore/main/Rust.gitignore
 # Commit: d15076e
