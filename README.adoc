@@ -16,7 +16,7 @@ You can create them directly at the target host.
 [source, bash]
 ----
 # Linux
-al@linux ~ $ ./mkcert -f examples/request.yaml
+al@linux ~ $ mkcert -f examples/request.yaml
 New certificate: csr.example.com
 Enter new passphrase:
 Verifying - Enter new passphrase:
@@ -28,15 +28,16 @@ csr.example.com.csr  csr.example.com.key
 [source, powershell]
 ----
 # Windows
-PS C:\Users\al> .\mkcert.exe --help
+PS C:\Users\al> mkcert.exe --help
 A simple program to create X.509 certificates
 
 Usage: mkcert.exe [OPTIONS]
 
 Options:
-  -f, --file <FILE>  Template file
-  -h, --help         Print help
-  -V, --version      Print version
+  -f, --file <FILE>      Template file
+  -b, --bundle <BUNDLE>  Bundle a private key with a certificate into a PKCS #12 file
+  -h, --help             Print help
+  -V, --version          Print version
 ----
 
 == Private keys
@@ -51,7 +52,31 @@ Details:
 * Key derivation function: PBKDF2
 
 NOTE: Use a strong (long and random) passphrase.
-https://xkcd.com/936[Click here] for an illustration of the concept.
+https://xkcd.com/936[Click here] for an illustration.
+
+== Creating PKCS #12 files
+
+A PKCS #12 (.p12) file is convenient for handling certificates on Windows.
+They contain a private key and one or more certificates.
+
+To create a .p12 file, use the `-b, --bundle` option together with a private key and a certificate.
+
+[source, bash]
+----
+al@linux ~ $ ls crt*
+crt.example.com.crt  crt.example.com.key
+
+al@linux ~ $ mkcert -b crt.example.com.key
+Bundle: crt.example.com
+Enter passphrase:
+
+al@linux ~ $ ls crt*
+crt.example.com.crt  crt.example.com.key  crt.example.com.p12
+----
+
+You can then double-click the .p12 file to import the private key and the certificate into the Windows certificate store.
+Delete the .p12 file after a successful import.
+You don't need it and the store is more secure.
 
 == Contributing
 
