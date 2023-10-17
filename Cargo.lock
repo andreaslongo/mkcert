@@ -174,12 +174,10 @@ checksum = "b4668fb0ea861c1df094127ac5f1da3409a82116a4ba74fca2e58ef927159bb3"
 
 [[package]]
 name = "mkcert"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
- "anstream",
  "clap",
  "openssl",
- "owo-colors",
  "rpassword",
  "serde",
  "serde_yaml",
@@ -228,12 +226,6 @@ dependencies = [
  "pkg-config",
  "vcpkg",
 ]
-
-[[package]]
-name = "owo-colors"
-version = "3.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1b04fb49957986fdce4d6ee7a65027d55d4b6d2265e5848bbb507b58ccfdb6f"
 
 [[package]]
 name = "pkg-config"
