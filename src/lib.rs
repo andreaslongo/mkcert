@@ -14,6 +14,7 @@ use openssl::hash::MessageDigest;
 use openssl::pkey::PKey;
 use openssl::pkey::Private;
 use openssl::rsa::Rsa;
+use openssl::pkcs12::Pkcs12;
 use openssl::symm::Cipher;
 use openssl::x509::extension::AuthorityKeyIdentifier;
 use openssl::x509::extension::BasicConstraints;
@@ -112,16 +113,33 @@ fn extend_certificates_from_contents(
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     for bundle in config.bundles {
-        println!("Bundle: {}", bundle.private_key_file.display());
+        let name  = bundle.private_key_file.file_stem().ok_or("Invalid file name")?.to_str().ok_or("Invalid file name")?;
+        println!("Bundle: {}", &name);
+
         let passphrase = Passphrase::from_tty()?;
+        let pkey = &bundle.private_key_file;
+        let pkey = fs::read_to_string(pkey)?.into_bytes();
+        let pkey = PKey::private_key_from_pem_passphrase(&pkey, &passphrase.value.clone().into_bytes())?;
 
-        let der = fs::read_to_string(bundle.private_key_file)?.into_bytes();
-        let private_key = PKey::private_key_from_pkcs8_passphrase(&der, &passphrase.value.into_bytes())?;
+        let cert = bundle.private_key_file.with_extension("crt");
+        let cert = fs::read_to_string(cert)?.into_bytes();
+        let cert = X509::from_pem(&cert)?;
 
-        dbg!(&der);
-        dbg!(&private_key);
+        let mut builder = Pkcs12::builder();
+        
+        builder.name(name);
+        builder.pkey(&pkey);
+        builder.cert(&cert);
+
+        let p12 = builder.build2(&passphrase.value)?;
+
+        let mut p12_file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(bundle.private_key_file.with_extension("p12"))?;
+
+        p12_file.write_all(&p12.to_der()?)?;
     }
-
 
     for request in config.certificates {
         println!("New certificate: {}", request.common_name);
