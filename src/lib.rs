@@ -144,7 +144,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
             let mut cert_file = OpenOptions::new()
                 .write(true)
                 .create_new(true)
-                .open(request.common_name.clone() + ".pem")?;
+                .open(request.common_name.clone() + ".crt")?;
             cert_file.write_all(&cert.to_pem()?)?;
 
             // TODO: Make this --verbose
