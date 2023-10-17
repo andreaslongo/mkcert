@@ -177,11 +177,14 @@ fn new_key_pair(cert: &Certificate) -> Result<PKey<Private>, ErrorStack> {
 
 fn build_x509_name(cert: &Certificate) -> Result<X509Name, ErrorStack> {
     let mut x509_name = X509NameBuilder::new()?;
-    x509_name.append_entry_by_text("CN", &cert.common_name)?;
-    x509_name.append_entry_by_text("O", &cert.organization)?;
-    x509_name.append_entry_by_text("L", &cert.locality)?;
-    x509_name.append_entry_by_text("ST", &cert.state)?;
+
+    // The order of the calls matter.
+    // This is reversed when opening the certificate on Windows.
     x509_name.append_entry_by_text("C", &cert.country)?;
+    x509_name.append_entry_by_text("ST", &cert.state)?;
+    x509_name.append_entry_by_text("L", &cert.locality)?;
+    x509_name.append_entry_by_text("O", &cert.organization)?;
+    x509_name.append_entry_by_text("CN", &cert.common_name)?;
 
     Ok(x509_name.build())
 }
