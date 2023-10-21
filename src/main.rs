@@ -25,13 +25,16 @@ fn main() {
     }
 }
 
-/// A simple program to create X.509 certificates
+const TEMPLATE: &str = "
+{about}
+https://github.com/andreaslongo/mkcert
+
+{usage-heading} {usage}
+
+{all-args}";
+
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
-#[command(arg_required_else_help(true))]
-#[command(
-    help_template = "{about-section}\n{usage-heading} {usage}\n\n{all-args}\n\nWritten by {author}\nhttps://github.com/andreaslongo/mkcert"
-)]
+#[command(about, version, arg_required_else_help(true), help_template = TEMPLATE)]
 pub struct Cli {
     /// Template file
     #[arg(short, long)]

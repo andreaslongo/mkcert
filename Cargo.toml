@@ -5,11 +5,11 @@ edition = "2021"
 authors = ["Andreas Longo"]
 license = "GPL-3.0-or-later"
 repository = "https://github.com/andreaslongo/mkcert"
+description = "A simple program to create X.509 certificates"
 
 [dependencies]
 clap = { version = "4.4.6", features = ["derive"] }
 openssl = { version = "0.10.57", features = ["vendored"] }
-# openssl = "0.10.57"  # TODO: How to use this for DEV builds only?
 rpassword = "7.2.0"
 serde = { version = "1.0.188", features = ["derive"] }
 serde_yaml = "0.9.25"
