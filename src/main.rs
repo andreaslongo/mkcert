@@ -2,11 +2,14 @@ use std::path::PathBuf;
 use std::process;
 
 use clap::Parser;
+use human_panic::setup_panic;
 
 use mkcert::Args;
 use mkcert::Config;
 
 fn main() {
+    setup_panic!();
+
     let cli = Cli::parse();
 
     let args = Args {
