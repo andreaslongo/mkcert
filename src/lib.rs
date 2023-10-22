@@ -15,9 +15,11 @@ use openssl::pkcs12::Pkcs12;
 use openssl::pkey::PKey;
 use openssl::pkey::Private;
 use openssl::rsa::Rsa;
+use openssl::stack::Stack;
 use openssl::symm::Cipher;
 use openssl::x509::extension::AuthorityKeyIdentifier;
 use openssl::x509::extension::BasicConstraints;
+use openssl::x509::extension::SubjectAlternativeName;
 use openssl::x509::extension::SubjectKeyIdentifier;
 use openssl::x509::X509Name;
 use openssl::x509::X509NameBuilder;
@@ -241,6 +243,12 @@ fn new_self_signed_certificate(
     builder.set_subject_name(&x509_name)?;
     builder.set_pubkey(key_pair)?;
 
+    builder.append_extension(
+        SubjectAlternativeName::new()
+            .dns(&cert.common_name)
+            .build(&builder.x509v3_context(None, None))?,
+    )?;
+
     let subject_key_identifier =
         SubjectKeyIdentifier::new().build(&builder.x509v3_context(None, None))?;
     builder.append_extension(subject_key_identifier)?;
@@ -273,6 +281,14 @@ fn new_csr(cert: &Certificate, key_pair: &PKey<Private>) -> Result<X509Req, Erro
 
     let x509_name = build_x509_name(cert)?;
     builder.set_subject_name(&x509_name)?;
+
+    let mut extensions = Stack::new()?;
+    extensions.push(
+        SubjectAlternativeName::new()
+            .dns(&cert.common_name)
+            .build(&builder.x509v3_context(None))?,
+    )?;
+    builder.add_extensions(&extensions)?;
 
     builder.sign(key_pair, MessageDigest::sha256())?;
     let req = builder.build();
