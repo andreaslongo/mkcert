@@ -3,7 +3,6 @@ use std::fs;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::PathBuf;
-use std::str;
 
 use openssl::asn1::Asn1Integer;
 use openssl::asn1::Asn1Time;
