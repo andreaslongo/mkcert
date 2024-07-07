@@ -7,6 +7,7 @@ readonly local parent_dir=$(dirname ${script_dir})
 podman image build \
     --file "${script_dir}/Containerfile" \
     --ignorefile "${script_dir}/Containerignore" \
+    --no-cache \
     --pull-always \
     --tag "$(basename ${parent_dir})":"$(date --iso-8601)" \
     --tag "$(basename ${parent_dir})":latest \

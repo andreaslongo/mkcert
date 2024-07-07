@@ -20,11 +20,12 @@ RUN set -o errexit \
     && rm -rf /var/lib/apt/lists/*
 
 # Switch to non-root user
+# TODO: Test --no-log-init
 RUN set -o errexit \
     set -o nounset \
     set -o pipefail \
     set -o xtrace \
-    && useradd --create-home appuser
+    && useradd --create-home --no-log-init appuser
 USER appuser
 WORKDIR /home/appuser
 
