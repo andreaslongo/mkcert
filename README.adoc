@@ -1,84 +1,127 @@
 = mkcert: A simple program to create X.509 certificates
 
+
+
 == Getting started
 
-. Download and unpack the asset for your platform from the https://github.com/andreaslongo/mkcert/releases[release page].
+. Download and unpack the latest https://github.com/andreaslongo/mkcert/releases[binary release] for your platform:
 ** *Linux*: https://github.com/andreaslongo/mkcert/releases/latest/download/mkcert-x86_64-unknown-linux-musl.tar.gz[mkcert-x86_64-unknown-linux-musl.tar.gz]
 ** *Windows*: https://github.com/andreaslongo/mkcert/releases/latest/download/mkcert-x86_64-pc-windows-msvc.zip[mkcert-x86_64-pc-windows-msvc.zip]
 
-. Copy the program to the host where you want to use the new certificate.
-+
-NOTE: It is not necessary to copy and move around private keys.
-You can create them directly at the target host.
+. Open a terminal and run the program.
+
+[,console]
+----
+$ ./mkcert --help      # Linux
+$ .\mkcert.exe --help  # Windows
+----
+
+== Features
+
+=== Creating new certificates
+
+It is not necessary to copy and move around private keys.
+Create them directly on the target host.
+
+. Copy the program to the host where you need the new certificate.
 
 . Create a template file: https://github.com/andreaslongo/mkcert/tree/main/examples[Click here] for some examples.
 
-. Open a terminal and run the program.
+. Choose a https://xkcd.com/936[strong (long and random) passphrase].
 
-[source, bash]
+[,console]
 ----
-# Linux
-al@linux ~ $ mkcert -f examples/request.yaml
+$ mkcert -f examples/request.yaml
 New certificate: csr.example.com
 Enter new passphrase:
 Verifying - Enter new passphrase:
 
-al@linux ~ $ ls csr*
+$ ls csr*
 csr.example.com.csr  csr.example.com.key
 ----
 
-[source, powershell]
-----
-# Windows
-PS C:\Users\al> mkcert.exe --help
-A simple program to create X.509 certificates
+==== Private keys
 
-Usage: mkcert.exe [OPTIONS]
-
-Options:
-  -f, --file <FILE>      Template file
-  -b, --bundle <BUNDLE>  Bundle a private key with a certificate into a PKCS #12 file
-  -h, --help             Print help
-  -V, --version          Print version
-----
-
-== Private keys
-
-A new private key is automatically generated with every request.
-Each key is encrypted based on the passphrase you specify.
-You can use (decrypt) the key with the same passphrase.
+Each new certificate gets a new private key.
+The private key is encrypted based on the passphrase you specify.
+You can use/decrypt the key with the same passphrase.
 
 Details:
 
 * Encryption algorithm: AES 256-bit CBC
 * Key derivation function: PBKDF2
 
-NOTE: Use a strong (long and random) passphrase.
-https://xkcd.com/936[Click here] for an illustration.
+=== Creating PKCS #12 files
 
-== Creating PKCS #12 files
+A PKCS #12 (.p12) file is a container which bundles a private key and one or more certificates into a single file.
 
-A PKCS #12 (.p12) file is convenient for handling certificates on Windows.
-They contain a private key and one or more certificates.
+To create a .p12 file:
 
-To create a .p12 file, use the `-b, --bundle` option together with a private key and a certificate.
+. Put the certificate and the private key together in the same directory.
+. The file name of the certificate must match the name of the key.
+. Use the `-b, --bundle` option followed by the path to the key file.
 
-[source, bash]
+[,console]
 ----
-al@linux ~ $ ls crt*
-crt.example.com.crt  crt.example.com.key
+$ ls
+crt.example.com.crt
+crt.example.com.key
 
-al@linux ~ $ mkcert -b crt.example.com.key
+$ mkcert -b crt.example.com.key  # <- path to key file
 Bundle: crt.example.com
 Enter passphrase:
 
-al@linux ~ $ ls crt*
-crt.example.com.crt  crt.example.com.key  crt.example.com.p12
+$ ls
+crt.example.com.crt
+crt.example.com.key
+crt.example.com.p12
 ----
 
-You can then double-click the .p12 file to import the private key and the certificate into the Windows certificate store.
-Delete the .p12 file after a successful import.
-You don't need it and the store is more secure.
+==== Importing PKCS #12 files into the Windows certificate store
+
+On Windows, use the certificate store if the application which needs the certificate supports it.
+The store is more secure and you don't need the .p12 file.
+
+To import a .p12 file:
+
+. Double-click the .p12 file to import the private key and the certificate into the Windows certificate store.
+. Delete the .p12 file after a successful import.
+
+== Changelog
+
+All notable changes will be documented here.
+
+The format is based on https://keepachangelog.com/en/1.1.0/[Keep a Changelog],
+and this project adheres to https://semver.org/spec/v2.0.0.html[Semantic Versioning].
+
+=== [0.2.1] - 2023-10-22
+
+==== Changed
+
+* Set the common name as default subject alternative name (SAN).
+Some browsers require a SAN to validate the certificate.
+
+==== Added
+
+* Helpful error message when the program crashes.
+
+==== Fixed
+
+* Build dependencies for OpenSSL.
+
+=== [0.2.0] - 2023-10-17
+
+==== Changed
+
+* The OpenSSL library is now built-in to make the program more portable.
+
+==== Added
+
+* Support for creating PKCS #12 files.
+
+=== [0.1.0] - 2023-10-14
+
+Initial release.
 
 == Contributing
 
@@ -87,23 +130,28 @@ The best way to get started is to build and run a local dev container.
 You can use https://podman.io[Podman] or any other OCI compliant container manager.
 The dev container has all the required dependencies for working with the project.
 
-[source, bash]
+[,console]
 ----
-container/build.sh
-container/run.sh
+$ container/build.sh
+$ container/run.sh
 ----
 
 From inside the container, you can then run some workflows.
 
-[source, bash]
+[,console]
 ----
-cargo test    # run tests
-cargo clippy  # run linters
-cargo run
+$ cargo fmt && cargo clippy --all-targets  # run code formatter and linter
+$ cargo test  # run tests
+$ cargo doc   # build the docs
+$ cargo run   # run the binary crate
 ----
+
+=== Useful resources
+
+* https://github.com/andreaslongo/learn-rust
 
 == License
 
-Copyright (C) 2023 Andreas Longo
+Copyright (C) 2024 Andreas Longo
 
 GNU General Public License v3.0 or later
