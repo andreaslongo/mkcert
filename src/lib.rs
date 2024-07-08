@@ -1,3 +1,13 @@
+//! # A library crate
+
+// Lints:
+#![warn(clippy::pedantic)]
+#![warn(deprecated_in_future)]
+#![warn(missing_debug_implementations)]
+#![warn(missing_docs)]
+#![warn(rust_2018_idioms)]
+
+
 use std::error::Error;
 use std::fs;
 use std::fs::OpenOptions;
@@ -303,3 +313,16 @@ fn new_csr(cert: &Certificate, key_pair: &PKey<Private>) -> Result<X509Req, Erro
 //     print!("{}", str::from_utf8(c)?);
 //     Ok(())
 // }
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        // let result = add(2, 2);
+        // assert_eq!(result, 4);
+    }
+}
