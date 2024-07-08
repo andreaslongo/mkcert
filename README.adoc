@@ -1,7 +1,5 @@
 = mkcert: A simple program to create X.509 certificates
 
-
-
 == Getting started
 
 . Download and unpack the latest https://github.com/andreaslongo/mkcert/releases[binary release] for your platform:
