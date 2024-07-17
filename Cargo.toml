@@ -9,9 +9,14 @@ homepage = "https://github.com/andreaslongo/mkcert"
 description = "A simple program to create X.509 certificates"
 
 [dependencies]
-clap = { version = "4.4.6", features = ["derive"] }
-human-panic = "1.2.1"
-openssl = { version = "0.10.57", features = ["vendored"] }
-rpassword = "7.2.0"
-serde = { version = "1.0.188", features = ["derive"] }
-serde_yaml = "0.9.25"
+anyhow = "1.0.86"
+clap = { version = "4.5.9", features = ["derive"] }
+human-panic = "2.0.0"
+openssl = { version = "0.10.64", features = ["vendored"] }
+rpassword = "7.3.1"
+serde = { version = "1.0.204", features = ["derive"] }
+serde_yaml = "0.9.34"
+
+[dev-dependencies]
+assert_cmd = "2.0.14"
+predicates = "3.1.0"
