@@ -7,13 +7,7 @@
 #![warn(missing_docs)]
 #![warn(rust_2018_idioms)]
 
-
-use std::error::Error;
-use std::fs;
-use std::fs::OpenOptions;
-use std::io::Write;
-use std::path::PathBuf;
-
+use anyhow::anyhow;
 use openssl::asn1::Asn1Integer;
 use openssl::asn1::Asn1Time;
 use openssl::bn::BigNum;
@@ -34,14 +28,26 @@ use openssl::x509::X509Name;
 use openssl::x509::X509NameBuilder;
 use openssl::x509::X509Req;
 use openssl::x509::X509;
-use serde::Deserialize;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::fs::OpenOptions;
+use std::io::Write;
+use std::path::PathBuf;
 
+/// An opaque error type for all kinds of application errors
+// pub type AppError = Box<dyn std::error::Error + Send + Sync + 'static>;
+pub type AppError = anyhow::Error;
+
+/// Fields are documented in main.rs > CLI Args
+#[allow(missing_docs)]
+#[derive(Debug)]
 pub struct Args {
     pub file_path: Option<Vec<PathBuf>>,
     pub bundle_path: Option<Vec<PathBuf>>,
 }
 
+/// The configuration for the program
+#[derive(Debug, PartialEq)]
 pub struct Config {
     certificates: Vec<Certificate>,
     bundles: Vec<Bundle>,
@@ -58,19 +64,24 @@ struct Certificate {
     self_signed: bool,
 }
 
+#[derive(Debug, PartialEq)]
 struct Bundle {
     private_key_file: PathBuf,
 }
 
 impl Config {
-    pub fn build(args: Args) -> Result<Config, Box<dyn Error>> {
+    /// Builds a `Config` from CLI `Args`.
+    /// # Errors
+    ///
+    /// Can fail.
+    pub fn build(args: Args) -> Result<Config, AppError> {
         let mut certificates: Vec<Certificate> = Vec::new();
         let mut bundles: Vec<Bundle> = Vec::new();
 
         if let Some(file_path) = args.file_path {
             for file in file_path {
                 let contents = fs::read_to_string(file)?;
-                extend_certificates_from_contents(&mut certificates, contents)?;
+                extend_certificates_from_contents(&mut certificates, &contents)?;
             }
         }
 
@@ -78,12 +89,12 @@ impl Config {
             for private_key_file in bundle_path {
                 if private_key_file
                     .extension()
-                    .ok_or("Not a private key file")?
+                    .ok_or(anyhow!("Not a private key file"))?
                     == "key"
                 {
                     bundles.push(Bundle { private_key_file });
                 } else {
-                    println!("Not a private key file: {}", private_key_file.display());
+                    eprintln!("Not a private key file: {}", private_key_file.display());
                 }
             }
         }
@@ -100,18 +111,17 @@ struct Passphrase {
 }
 
 impl Passphrase {
-    fn new_from_tty() -> Result<Passphrase, Box<dyn Error>> {
-        let value = rpassword::prompt_password("Enter new passphrase: ").unwrap();
-        let confirmation =
-            rpassword::prompt_password("Verifying - Enter new passphrase: ").unwrap();
+    fn new_from_tty() -> Result<Passphrase, AppError> {
+        let value = rpassword::prompt_password("Enter new passphrase: ")?;
+        let confirmation = rpassword::prompt_password("Verifying - Enter new passphrase: ")?;
         assert_eq!(value, confirmation, "Verify failure");
         assert!(!value.is_empty());
 
         Ok(Passphrase { value })
     }
 
-    fn from_tty() -> Result<Passphrase, Box<dyn Error>> {
-        let value = rpassword::prompt_password("Enter passphrase: ").unwrap();
+    fn from_tty() -> Result<Passphrase, AppError> {
+        let value = rpassword::prompt_password("Enter passphrase: ")?;
         assert!(!value.is_empty());
 
         Ok(Passphrase { value })
@@ -121,22 +131,27 @@ impl Passphrase {
 /// Parses the content of a template file and extends the certificates vector.
 fn extend_certificates_from_contents(
     certificates: &mut Vec<Certificate>,
-    contents: String,
+    contents: &str,
 ) -> Result<(), serde_yaml::Error> {
-    let c: Vec<Certificate> = serde_yaml::from_str(&contents)?;
+    let c: Vec<Certificate> = serde_yaml::from_str(contents)?;
     certificates.extend(c);
 
     Ok(())
 }
 
-pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+/// Performs the main actions
+///
+/// # Errors
+///
+/// Can fail.
+pub fn run(config: Config) -> Result<(), AppError> {
     for bundle in config.bundles {
         let name = bundle
             .private_key_file
             .file_stem()
-            .ok_or("Invalid file name")?
+            .ok_or(anyhow!("Invalid file name"))?
             .to_str()
-            .ok_or("Invalid file name")?;
+            .ok_or(anyhow!("Invalid file name"))?;
         println!("Bundle: {}", &name);
 
         let passphrase = Passphrase::from_tty()?;
@@ -204,7 +219,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
             // print(&csr.to_text()?)?;
         }
 
-        println!() // visually separate multiple requests
+        println!(); // visually separate multiple requests
     }
 
     Ok(())
@@ -314,15 +329,21 @@ fn new_csr(cert: &Certificate, key_pair: &PKey<Private>) -> Result<X509Req, Erro
 //     Ok(())
 // }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
-        // let result = add(2, 2);
-        // assert_eq!(result, 4);
+    fn config() {
+        // let args = Args {
+        //     file_path: Some(vec![PathBuf::new()]),
+        //     bundle_path: Some(vec![PathBuf::new()]),
+        // };
+        // let config = Config::build(args)?;
+        let _expected = Config {
+            certificates: Vec::new(),
+            bundles: Vec::new(),
+        };
+        // assert_eq!(config, expected);
     }
 }

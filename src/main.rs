@@ -7,16 +7,12 @@
 #![warn(missing_docs)]
 #![warn(rust_2018_idioms)]
 
-use std::path::PathBuf;
-use std::process;
-
 use clap::Parser;
 use human_panic::setup_panic;
+use mkcert::{AppError, Args, Config};
+use std::path::PathBuf;
 
-use mkcert::Args;
-use mkcert::Config;
-
-fn main() {
+fn main() -> Result<(), AppError> {
     setup_panic!();
 
     let cli = Cli::parse();
@@ -26,17 +22,12 @@ fn main() {
         bundle_path: cli.bundle,
     };
 
-    let config = Config::build(args).unwrap_or_else(|e| {
-        eprintln!("Configuration error: {e}\nTry 'mkcert --help' for more information.");
-        process::exit(1);
-    });
-
-    if let Err(e) = mkcert::run(config) {
-        eprintln!("Application error: {e}\nTry 'mkcert --help' for more information.");
-        process::exit(1);
-    }
+    let config = Config::build(args)?;
+    mkcert::run(config)?;
+    Ok(())
 }
 
+// const HELP: &str = "Error: {e}\nTry 'mkcert --help' for more information.";
 const TEMPLATE: &str = "
 {about}
 https://github.com/andreaslongo/mkcert
@@ -45,9 +36,9 @@ https://github.com/andreaslongo/mkcert
 
 {all-args}";
 
-#[derive(Parser)]
+#[derive(Debug, Parser)]
 #[command(about, version, arg_required_else_help(true), help_template = TEMPLATE)]
-pub struct Cli {
+struct Cli {
     /// Template file
     #[arg(short, long)]
     file: Option<Vec<PathBuf>>,
