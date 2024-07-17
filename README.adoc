@@ -139,9 +139,10 @@ From inside the container, you can then run some workflows.
 [,console]
 ----
 $ cargo fmt && cargo clippy --all-targets  # run code formatter and linter
-$ cargo test  # run tests
-$ cargo doc   # build the docs
-$ cargo run   # run the binary crate
+$ cargo test   # run tests
+$ cargo doc    # build the docs
+$ cargo run    # run the binary crate
+$ cargo clean  # remove build artifacts
 ----
 
 === Useful resources
