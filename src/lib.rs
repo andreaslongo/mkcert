@@ -7,7 +7,7 @@
 #![warn(missing_docs)]
 #![warn(rust_2018_idioms)]
 
-use anyhow::anyhow;
+use anyhow::{anyhow, bail, Context};
 use openssl::asn1::Asn1Integer;
 use openssl::asn1::Asn1Time;
 use openssl::bn::BigNum;
@@ -87,14 +87,11 @@ impl Config {
 
         if let Some(bundle_path) = args.bundle_path {
             for private_key_file in bundle_path {
-                if private_key_file
-                    .extension()
-                    .ok_or(anyhow!("Not a private key file"))?
-                    == "key"
-                {
-                    bundles.push(Bundle { private_key_file });
-                } else {
-                    eprintln!("Not a private key file: {}", private_key_file.display());
+                match private_key_file.extension() {
+                    Some(extension) if extension == "key" => {
+                        bundles.push(Bundle { private_key_file });
+                    }
+                    _ => bail!("Expected a .key file: '{}'", private_key_file.display()),
                 }
             }
         }
@@ -114,16 +111,20 @@ impl Passphrase {
     fn new_from_tty() -> Result<Passphrase, AppError> {
         let value = rpassword::prompt_password("Enter new passphrase: ")?;
         let confirmation = rpassword::prompt_password("Verifying - Enter new passphrase: ")?;
+
+        if value != confirmation {
+            bail!("Passphrases do not match");
+        };
+        if value.is_empty() {
+            bail!("Passphrase is empty");
+        };
         assert_eq!(value, confirmation, "Verify failure");
-        assert!(!value.is_empty());
 
         Ok(Passphrase { value })
     }
 
     fn from_tty() -> Result<Passphrase, AppError> {
         let value = rpassword::prompt_password("Enter passphrase: ")?;
-        assert!(!value.is_empty());
-
         Ok(Passphrase { value })
     }
 }
@@ -132,8 +133,8 @@ impl Passphrase {
 fn extend_certificates_from_contents(
     certificates: &mut Vec<Certificate>,
     contents: &str,
-) -> Result<(), serde_yaml::Error> {
-    let c: Vec<Certificate> = serde_yaml::from_str(contents)?;
+) -> Result<(), AppError> {
+    let c: Vec<Certificate> = serde_yaml::from_str(contents).context("Invalid YAML file")?;
     certificates.extend(c);
 
     Ok(())
@@ -154,14 +155,23 @@ pub fn run(config: Config) -> Result<(), AppError> {
             .ok_or(anyhow!("Invalid file name"))?;
         println!("Bundle: {}", &name);
 
-        let passphrase = Passphrase::from_tty()?;
         let pkey = &bundle.private_key_file;
-        let pkey = fs::read_to_string(pkey)?.into_bytes();
+        let pkey = fs::read_to_string(pkey)
+            .context("Failed to read .key file")?
+            .into_bytes();
+
+        let passphrase = Passphrase::from_tty()?;
+
+        // TODO: Test if pkey is a valid PEM
         let pkey =
-            PKey::private_key_from_pem_passphrase(&pkey, &passphrase.value.clone().into_bytes())?;
+            PKey::private_key_from_pem_passphrase(&pkey, &passphrase.value.clone().into_bytes())
+                .context("Maybe wrong password or bad .key file")?;
 
         let cert = bundle.private_key_file.with_extension("crt");
-        let cert = fs::read_to_string(cert)?.into_bytes();
+        let cert = fs::read_to_string(cert.clone())
+            .context(format!("Missing crt file: '{}'", &cert.display()))?
+            .into_bytes();
+
         let cert = X509::from_pem(&cert)?;
 
         let mut builder = Pkcs12::builder();
@@ -172,16 +182,20 @@ pub fn run(config: Config) -> Result<(), AppError> {
 
         let p12 = builder.build2(&passphrase.value)?;
 
+        let p12_path = bundle.private_key_file.with_extension("p12");
         let mut p12_file = OpenOptions::new()
             .write(true)
             .create_new(true)
-            .open(bundle.private_key_file.with_extension("p12"))?;
+            .open(&p12_path)
+            .context(format!("Failed to open file: '{}'", p12_path.display()))?;
 
-        p12_file.write_all(&p12.to_der()?)?;
+        p12_file
+            .write_all(&p12.to_der()?)
+            .context(format!("Failed to write file: '{}'", p12_path.display()))?;
     }
 
     for request in config.certificates {
-        println!("New certificate: {}", request.common_name);
+        println!("New certificate: '{}'", request.common_name);
         let passphrase = Passphrase::new_from_tty()?;
 
         let key_pair = new_key_pair(&request)?;
