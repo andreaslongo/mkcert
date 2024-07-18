@@ -92,6 +92,12 @@ All notable changes will be documented here.
 The format is based on https://keepachangelog.com/en/1.1.0/[Keep a Changelog],
 and this project adheres to https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
+=== [0.2.2] - 2024-07-18
+
+==== Added
+
+* More helpful error messages when something goes wrong.
+
 === [0.2.1] - 2023-10-22
 
 ==== Changed
